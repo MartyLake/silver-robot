@@ -1,3 +1,59 @@
+window.audioFiles = [];
+window.startTimeMs = 0;
+window.audioDurationMs = 0;
+
+function shouldPlay(i) {
+    //TODO
+    return true;
+}
+
+function getCurrentLoopTime() {
+    //TODO return ((Date.now() - window.startTimeMs) % window.audioDurationMs) / 1000;
+    return 0;
+}
+
+function playAudio() {
+    var arrayLength = window.audioFiles.length;
+    for (var i = 0; i < arrayLength; i++) {
+        var audioFile = window.audioFiles[i];
+        if (! shouldPlay(i)) {
+            audioFile.pause();
+        } else {
+            audioFile.currentTime = getCurrentLoopTime();;
+            audioFile.play();
+        }
+    }
+}
+
+function isAllAudioLoaded() {
+    var arrayLength = window.audioFiles.length;
+    for (var i = 0; i < arrayLength; i++) {
+        if (! (window.audioFiles[i].readyState == 4 /*HAVE_ENOUGH_DATA*/ )) {
+            return false;
+        }
+    }
+    return true;
+}
+function audioLoadedCallback() {
+    if(isAllAudioLoaded()) {
+        console.log("Audio: all loaded.");
+        startTimeMs = Date.now();
+        audioDurationMs = window.audioFiles[0].duration;
+        playAudio();
+        return;
+    }
+    console.log("Audio: still loading.");
+}
+function createAudio(filename) {
+    var audio = new Audio(filename);
+    audio.loop = true;
+    audio.preload = true;
+    audio.oncanplaythrough=function(){
+        audioLoadedCallback();
+        console.log(filename + " has finished loading.");
+    };
+    return audio;
+}
 function createTable() {
     var table = document.createElement('table');
     var tableBody = document.createElement('tbody');
@@ -21,9 +77,9 @@ function createTable() {
 
         var row = document.createElement('tr');
         variants.forEach(function(i) {
-            const folderBase2 = folderBase + "/" + i + "/"
             const variantName = i.pretty
             const variantFolder = i.folder
+            const folderBase2 = folderBase + "/" + variantFolder + "/"
 
             for (j = 1; j < 4; j++) {
                 var filename = folderBase2 + filenameBase + "_" + j + variantFolder + ".wav"
@@ -31,16 +87,18 @@ function createTable() {
                 const cellData = pretty + " " + variantName + j;
                 var cell = document.createElement('td');
                 cell.setAttribute("id", cellData);
+                cell.setAttribute("filename", filename);
+                window.audioFiles.push(createAudio(filename));
                 cell.appendChild(document.createTextNode(cellData));
                 row.appendChild(cell);
             }
 
-      });
-      tableBody.appendChild(row);
-  });
+        });
+        tableBody.appendChild(row);
+    });
 
-  table.appendChild(tableBody);
-  document.body.appendChild(table);
+    table.appendChild(tableBody);
+    document.body.appendChild(table);
 }
 
 createTable();
